@@ -16,7 +16,7 @@ class DatabaseHelper {
 
   Future<Database> _init() async {
     final dbPath = await getDatabasesPath();
-    final path = join(dbPath, 'farmacio_app.db');
+    final path = join(dbPath, 'stock_mananger_app');
 
     return await openDatabase(
       path,
@@ -24,6 +24,8 @@ class DatabaseHelper {
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
+    await _ensureProductsTable(db);
+    return db;
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -50,6 +52,24 @@ class DatabaseHelper {
       );
       await db.execute("ALTER TABLE users ADD COLUMN classId TEXT");
     }
+  }
+
+  Future<void> _ensurProductsTable(Database db )async {
+    await db.execute('''
+     CREATE TABLE IF NOT EXISTS pizza_estoque (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        remoteId TEXT UNIQUE,
+        nome TEXT NOT NULL,
+        precoVenda REAL NOT NULL,
+        quantidadeEstoque INTEGER NOT NULL,
+        dataValidade INTEGER,
+        dataCriacao INTEGER NOT NULL,
+        dataAtualizacao INTEGER NOT NULL,
+        dirty INTEGER NOT NULL DEFAULT 0,
+        deleted INTEGER NOT NULL DEFAULT 0
+      );
+    ''');
+    await db.execute('CREATE UNIQUE INDEX IF NOT EXIST idx_products_remoteId ON prducts(remoteId);');
   }
 
   Future<void> close() async {

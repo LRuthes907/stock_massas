@@ -1,26 +1,27 @@
-class productController extends getxController
-final _repo = produtoRepository();
+import 'package:get/get.dart';
+import 'package:stock_massas/models/produtoModel.dart';
+import 'package:stock_massas/repository/produtoRepository.dart';
 
-final pizzas = <produto>[].obs
-final isLoading =false.obs
-final error = RxnString();
+class ProdutoController extends GetxController {
+  final _repo = ProdutoRepository();
 
+  final produtos = <Produto>[].obs;
+  final isLoading = false.obs;
+  final error = RxnString();
 
-@override
+  @override
   void onInit() {
     super.onInit();
-    loadProduto(); 
+    loadProduto();
   }
 
-.
   Future<void> loadProduto() async {
     try {
       isLoading.value = true;
-      error.value = null; 
-      
-      final list = await _repo.getAllProduto();
-      pizzas.assignAll(list); 
+      error.value = null;
 
+      final list = await _repo.getAllProduto();
+      produtos.assignAll(list);
     } catch (e) {
       error.value = 'Falha ao carregar produto: $e';
     } finally {
@@ -28,21 +29,19 @@ final error = RxnString();
     }
   }
 
-
   String? validateForm({
     required String nome,
     required String precoStr,
     required String quantidadeStr,
   }) {
     if (nome.trim().isEmpty) return 'Nome é obrigatório.';
-    
 
     final price = double.tryParse(precoStr.replaceAll(',', '.'));
     if (price == null || price < 0) return 'Preço de venda inválido.';
 
     final stock = int.tryParse(quantidadeStr);
     if (stock == null || stock < 0) return 'Estoque inválido.';
-    
+
     return null;
   }
 
@@ -54,17 +53,16 @@ final error = RxnString();
   }) async {
     try {
       isLoading.value = true;
-      final p = produto(
+      final p = Produto(
         nome: nome,
         preco: preco,
         quantidade: quantidade,
         dataValidade: dataValidade,
       );
 
-      await _repo.create(p); 
-      await loadProduto(); 
+      await _repo.create(p);
+      await loadProduto();
       return true;
-
     } catch (e) {
       error.value = 'Falha ao salvar Produto: $e';
       return false;
@@ -77,10 +75,8 @@ final error = RxnString();
     try {
       isLoading.value = true;
       await _repo.update(produtoAtualizada);
-      
-      await loadProduto(); 
+      await loadProduto();
       return true;
-
     } catch (e) {
       error.value = 'Falha ao atualizar Produto: $e';
       return false;
@@ -92,7 +88,8 @@ final error = RxnString();
   Future<void> removeProduto(int id) async {
     try {
       isLoading.value = true;
-      await loadProduto(); /
+      await _repo.delete(id);
+      await loadProduto();
     } catch (e) {
       error.value = 'Falha ao excluir Produto: $e';
     } finally {

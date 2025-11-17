@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get/get_connect/http/src/utils/utils.dart';
 import 'package:stock_massas/controller/authController.dart';
-import 'CadastroScreen.dart';
 
 class Loginscreen extends StatefulWidget {
   const Loginscreen({super.key});
@@ -12,14 +12,16 @@ class Loginscreen extends StatefulWidget {
 
 class _LoginscreenState extends State<Loginscreen> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _emailCtrl = TextEditingController();
-  final TextEditingController _passCtrl = TextEditingController();
+  final _nameCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
+  final _passCtrl = TextEditingController();
   final AuthController _auth = Get.put(AuthController());
   bool _obscure = true;
-  bool _isSignUp = false;
+  bool isSignUp = false;
 
   @override
   void dispose() {
+    _nameCtrl.dispose();
     _emailCtrl.dispose();
     _passCtrl.dispose();
     super.dispose();
@@ -40,12 +42,19 @@ class _LoginscreenState extends State<Loginscreen> {
     return null;
   }
 
+  String? _validateName(String? v) {
+    if (!isSignUp) return null;
+    final value = v?.trim() ?? '';
+    if (value.length < 2) return 'Informe seu nome';
+    return null;
+  }
+
   Future<void> _submit() async {
     final form = _formKey.currentState;
     if (form == null || !form.validate()) return;
     FocusScope.of(context).unfocus();
 
-    if (_isSignUp) {
+    if (isSignUp) {
       await _auth.registerEmail(_emailCtrl.text.trim(), _passCtrl.text);
     } else {
       await _auth.loginEmail(_emailCtrl.text.trim(), _passCtrl.text);
@@ -54,167 +63,347 @@ class _LoginscreenState extends State<Loginscreen> {
 
   @override
   Widget build(BuildContext context) {
-    final media = MediaQuery.of(context).size;
-    final cardWidth = media.width * 0.78;
-    final cardHeight = media.height * 0.65;
+    final w = MediaQuery.of(context).size.width;
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color.fromARGB(255, 0, 78, 7),
-              Color.fromARGB(255, 1, 102, 1),
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              child: Container(
-                width: cardWidth,
-                constraints: BoxConstraints(
-                  minHeight: 420,
-                  maxHeight: cardHeight,
+      backgroundColor: Colors.green[100],
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 450),
+              child: Card(
+                elevation: 8,
+                margin: EdgeInsets.symmetric(horizontal: w < 450 ? 8 : 0),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(25),
+                  side: BorderSide(color: Colors.green.shade700, width: 0.8),
                 ),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(30),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 12,
-                      offset: Offset(0, 6),
-                    ),
-                  ],
-                ),
+                color: Colors.white,
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(22, 24, 22, 18),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Center(
-                          child: Text(
-                            'Login',
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 30,
+                    horizontal: 40,
+                  ),
+                  child: Obx(
+                    () => Form(
+                      key: _formKey,
+                      autovalidateMode: AutovalidateMode.onUserInteraction,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            isSignUp ? 'criar nova conta' : 'entrar',
                             style: TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.black87,
+                              fontSize: 32,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.green.shade700,
+                              fontFamily: 'Montserrat',
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 28),
+                          const SizedBox(height: 12),
+                          Text(
+                            isSignUp
+                                ? 'preencha seus dados'
+                                : 'Acesse sua conta',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey.shade700,
+                              fontFamily: 'Montserrat',
+                            ),
+                          ),
+                          const SizedBox(height: 32),
 
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
+                          if (_auth.errorMessage.value != null) ...[
+                            Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: Colors.red.shade100,
+                                borderRadius: BorderRadius.circular(15),
+                                border: Border.all(
+                                  color: Colors.red.shade300,
+                                  width: 1.2,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.warning_amber_rounded,
+                                    color: Colors.red.shade700,
+                                    size: 22,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      _auth.errorMessage.value!,
+                                      style: TextStyle(
+                                        color: Colors.red.shade700,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                          ],
+                          if (isSignUp) ...[
                             TextFormField(
-                              controller: _emailCtrl,
-                              keyboardType: TextInputType.emailAddress,
-                              validator: _validateEmail,
+                              controller: _nameCtrl,
                               decoration: InputDecoration(
-                                labelText: 'Email',
-                                prefixIcon: const Icon(Icons.email_outlined),
-                                filled: true,
-                                fillColor: Colors.white,
-                                contentPadding: const EdgeInsets.symmetric(
-                                  vertical: 14,
-                                  horizontal: 12,
+                                labelText: 'Nome completo',
+                                hintText: 'Seu nome',
+                                prefixIcon: Icon(
+                                  Icons.person_outline,
+                                  color: Colors.green.shade700,
                                 ),
                                 border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(18),
-                                  borderSide: BorderSide.none,
+                                  borderRadius: BorderRadius.circular(15),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(15),
+                                  borderSide: BorderSide(
+                                    color: Colors.green.shade200,
+                                    width: 1,
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(15),
+                                  borderSide: BorderSide(
+                                    color: Colors.green.shade400,
+                                    width: 2,
+                                  ),
+                                ),
+                                labelStyle: TextStyle(
+                                  color: Colors.green.shade700,
+                                ),
+                                hintStyle: TextStyle(
+                                  color: Colors.green.shade300,
                                 ),
                               ),
+                              textInputAction: TextInputAction.next,
+                              validator: _validateName,
                             ),
-                            const SizedBox(height: 18),
-                            TextFormField(
-                              controller: _passCtrl,
-                              obscureText: _obscure,
-                              validator: _validatePassword,
-                              decoration: InputDecoration(
-                                labelText: 'Senha',
-                                prefixIcon: const Icon(Icons.lock_outline),
-                                suffixIcon: IconButton(
-                                  icon: Icon(
-                                    _obscure
-                                        ? Icons.visibility_off
-                                        : Icons.visibility,
-                                  ),
-                                  onPressed: () =>
-                                      setState(() => _obscure = !_obscure),
+                            const SizedBox(height: 16),
+                          ],
+
+                          TextFormField(
+                            controller: _emailCtrl,
+                            decoration: InputDecoration(
+                              labelText: 'Email',
+                              hintText: 'seuemail@email.com',
+                              prefixIcon: Icon(
+                                Icons.email_outlined,
+                                color: Colors.green.shade700,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(15),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(15),
+                                borderSide: BorderSide(
+                                  color: Colors.green.shade200,
+                                  width: 1,
                                 ),
-                                filled: true,
-                                fillColor: Colors.white,
-                                contentPadding: const EdgeInsets.symmetric(
-                                  vertical: 14,
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(15),
+                                borderSide: BorderSide(
+                                  color: Colors.green.shade400,
+                                  width: 2,
+                                ),
+                              ),
+                              labelStyle: TextStyle(
+                                color: Colors.green.shade700,
+                              ),
+                              hintStyle: TextStyle(
+                                color: Colors.green.shade300,
+                              ),
+                            ),
+                            keyboardType: TextInputType.emailAddress,
+                            textInputAction: TextInputAction.next,
+                            validator: _validateEmail,
+                          ),
+                          const SizedBox(height: 16),
+
+                          TextFormField(
+                            controller: _passCtrl,
+                            obscureText: _obscure,
+                            decoration: InputDecoration(
+                              labelText: 'senha',
+                              hintText: 'Mínimo 6 caracteres',
+                              prefixIcon: Icon(
+                                Icons.lock_outline,
+                                color: Colors.green.shade700,
+                              ),
+                              suffixIcon: IconButton(
+                                onPressed: () =>
+                                    setState(() => _obscure = !_obscure),
+                                icon: Icon(
+                                  _obscure
+                                      ? Icons.visibility
+                                      : Icons.visibility_off,
+                                  color: Colors.green.shade700,
+                                ),
+                                tooltip: _obscure
+                                    ? 'mostrar senha'
+                                    : 'ocultar senha',
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(15),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(15),
+                                borderSide: BorderSide(
+                                  color: Colors.green.shade200,
+                                  width: 1,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(15),
+                                borderSide: BorderSide(
+                                  color: Colors.green.shade400,
+                                  width: 2,
+                                ),
+                              ),
+                              labelStyle: TextStyle(
+                                color: Colors.green.shade700,
+                              ),
+                              hintStyle: TextStyle(
+                                color: Colors.green.shade300,
+                              ),
+                            ),
+                            textInputAction: TextInputAction.done,
+                            onFieldSubmitted: (_) => _submit(),
+                            validator: _validatePassword,
+                          ),
+                          const SizedBox(height: 30),
+
+                          SizedBox(
+                            width: double.infinity,
+                            height: 55,
+                            child: ElevatedButton(
+                              onPressed: _auth.isLoading.value ? null : _submit,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor:
+                                    Colors.green.shade700, //cor do botao
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(15),
+                                ),
+                                elevation: 5,
+                                foregroundColor: Colors.white, //cor do texto
+                                textStyle: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'montserrat',
+                                ),
+                              ),
+                              child: _auth.isLoading.value
+                                  ? SizedBox(
+                                      width: 28,
+                                      height: 28,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 3,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : Text(isSignUp ? 'Criar Conta' : 'Entrar'),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+
+                          TextButton(
+                            onPressed: _auth.isLoading.value
+                                ? null
+                                : () => setState(() => isSignUp = !isSignUp),
+                            child: Text(
+                              isSignUp
+                                  ? 'já possui uma conta? entre'
+                                  : 'não possui conta? crie uma',
+                              style: TextStyle(
+                                color: Colors.green.shade700,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 30),
+
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Divider(
+                                  thickness: 1.2,
+                                  color: Colors.green.shade200,
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
                                   horizontal: 12,
                                 ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(18),
-                                  borderSide: BorderSide.none,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: TextButton(
-                                onPressed: () {
-                                  // ação de recuperar senha
-                                },
-                                child: const Text('Esqueceu a senha?'),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            SizedBox(
-                              width: double.infinity,
-                              height: 48,
-                              child: ElevatedButton(
-                                onPressed: _submit,
-                                style: ElevatedButton.styleFrom(
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(14),
+                                child: Text(
+                                  "ou via",
+                                  style: TextStyle(
+                                    color: Colors.grey.shade600,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
-                                child: const Text('Entrar'),
                               ),
-                            ),
-                          ],
-                        ),
+                              Expanded(
+                                child: Divider(
+                                  thickness: 1.2,
+                                  color: Colors.green.shade200,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 20),
 
-                        const SizedBox(height: 18),
-
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Text(
-                              'Ainda não tem conta?',
-                              style: TextStyle(color: Colors.black54),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 55,
+                            child: OutlinedButton.icon(
+                              onPressed: _auth.isLoading.value
+                                  ? null
+                                  : _auth.loginGoogle,
+                              style: OutlinedButton.styleFrom(
+                                side: BorderSide(
+                                  color: Colors.green.shade700,
+                                  width: 1.5,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(15),
+                                ),
+                                textStyle: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'montserrat',
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 8,
+                                ),
+                              ),
+                              icon: SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: Image.asset(
+                                  'assets/pngoogle.png',
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      const Icon(
+                                        Icons.account_circle,
+                                        size: 24,
+                                      ),
+                                ),
+                              ),
+                              label: const Text('entrar com Google'),
                             ),
-                            TextButton(
-                              child: const Text('Cadastre-se'),
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        const Cadastroscreen(),
-                                  ),
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 6),
-                      ],
+                          ),
+                          const SizedBox(height: 10),
+                        ],
+                      ),
                     ),
                   ),
                 ),

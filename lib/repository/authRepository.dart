@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:stock_massas/database/databaseHelper.dart';
 import 'package:stock_massas/models/userModel.dart';
 import 'package:sqflite/sqflite.dart';
@@ -20,6 +21,7 @@ class UserRepository {
 
   // ---------- SQLITE ----------
   Future<UserModel?> findByFirebaseUid(String uid) async {
+    if (kIsWeb) return null;
     final db = await _db;
     final res = await db.query(
       'users',
@@ -31,25 +33,28 @@ class UserRepository {
     return UserModel.fromMap(res.first);
   }
 
-  Future<UserModel> upsertLocal(UserModel u) async {
-    final db = await _db;
-    final existing = await db.query(
-      'users',
-      where: 'firebaseUid = ?',
-      whereArgs: [u.firebaseUid],
-      limit: 1,
-    );
-    if (existing.isEmpty) {
-      final id = await db.insert('users', u.toMap());
-      return u.copyWith(id: id);
-    } else {
-      await db.update(
+  Future<void> upsertLocal(UserModel u) async {
+    if (kIsWeb) return;
+    try {
+      final db = await _db;
+      final existing = await db.query(
         'users',
-        u.toMap(),
         where: 'firebaseUid = ?',
         whereArgs: [u.firebaseUid],
+        limit: 1,
       );
-      return u.copyWith(id: existing.first['id'] as int?);
+      if (existing.isEmpty) {
+        await db.insert('users', u.toMap());
+      } else {
+        await db.update(
+          'users',
+          u.toMap(),
+          where: 'firebaseUid = ?',
+          whereArgs: [u.firebaseUid],
+        );
+      }
+    } catch (e) {
+      print("Erro ao inserir/atualizar usuario local: $e");
     }
   }
 
@@ -70,7 +75,7 @@ class UserRepository {
           );
 
     await upsertFirestore(merged); // garante no remoto (merge)
-    final local = await upsertLocal(merged); // garante no local
-    return local;
+    await upsertLocal(merged); // garante no local
+    return merged;
   }
 }

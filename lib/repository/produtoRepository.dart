@@ -1,11 +1,11 @@
-import 'package:corretor_prova/database/database_helper.dart';
-import 'package:corretor_prova/models/pizza_estoque_model.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:stock_massas/database/databaseHelper.dart';
+import '../models/produtoModel.dart';
 
-class produtoRepository{
-  Future<Database> get _db async => DatabaseHelper.instance.database;
+class ProdutoRepository {
+  Future<Database> get _db async => await DatabaseHelper.instance.database;
 
-  Future<int> create(ProdutoEstoque produto) async {
+  Future<int> create(Produto produto) async {
     final db = await _db;
     return await db.insert(
       'produto_estoque',
@@ -14,7 +14,7 @@ class produtoRepository{
     );
   }
 
-  Future<int> update(ProdutoEstoque produto) async {
+  Future<int> update(Produto produto) async {
     final db = await _db;
     return await db.update(
       'produto_estoque',
@@ -24,9 +24,9 @@ class produtoRepository{
     );
   }
 
-  Future<List<ProdutoEstoque>> getAllProduto() async {
+  Future<List<Produto>> getAllProduto() async {
     final db = await _db;
-    
+
     final List<Map<String, dynamic>> maps = await db.query(
       'produto_estoque',
       where: 'deleted = 0',
@@ -34,11 +34,11 @@ class produtoRepository{
     );
 
     return List.generate(maps.length, (i) {
-      return ProdutoEstoque.fromMap(maps[i]);
+      return Produto.fromMap(maps[i]);
     });
   }
 
-  Future<produtoEstoque?> getById(int id) async {
+  Future<Produto?> getById(int id) async {
     final db = await _db;
     final List<Map<String, dynamic>> maps = await db.query(
       'produto_estoque',
@@ -47,14 +47,14 @@ class produtoRepository{
     );
 
     if (maps.isNotEmpty) {
-      return ProdutoEstoque.fromMap(maps.first);
+      return Produto.fromMap(maps.first);
     }
     return null;
   }
 
   Future<int> delete(int id) async {
     final db = await _db;
-    
+
     final updateData = {
       'deleted': 1,
       'dirty': 1,

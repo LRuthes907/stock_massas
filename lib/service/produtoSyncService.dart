@@ -1,16 +1,16 @@
 import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:corretor_prova/models/productModel.dart';
-import 'package:corretor_prova/repository/productRepository.dart';
-import 'package:corretor_prova/repository/productRemoteRepository.dart';
+import '../models/produtoModel.dart';
+import '../repository/produtoRepository.dart';
+import '../repository/produtoRemoteRepository.dart';
 
-class ProductSyncService {
-  final ProductRepository local;
-  final ProductRemoteRepository remote;
+class ProdutoSyncService {
+  final ProdutoRepository local;
+  final ProdutoRemoteRepository remote;
   StreamSubscription? _connSub;
   StreamSubscription? _remoteSub;
 
-  ProductSyncService({required this.local, required this.remote});
+  ProdutoSyncService({required this.local, required this.remote});
 
   Future<void> init() async {
     await pullFromRemote();
@@ -19,10 +19,16 @@ class ProductSyncService {
       for (final change in snap.docChanges) {
         final data = change.doc.data();
         if (data == null) continue;
-        final p = Product.fromFirestore(data, remoteId: change.doc.id);
-        final current = p.remoteId == null ? null : await local.getByRemoteId(p.remoteId!);
+        final p = Produto.fromFirestore(
+          data as Map<String, dynamic>,
+          id: change.doc.id,
+        );
+        final current = p.remoteId == null
+            ? null
+            : await local.getByRemoteId(p.remoteId!);
 
-        if (current == null || p.updatedAt.isAfter(current.updatedAt)) {
+        if (current == null ||
+            p.dataAtualizacao.isAfter(current.dataAtualizacao)) {
           if (p.deleted) {
             if (current?.id != null) {
               await local.hardDelete(current!.id!);
@@ -54,8 +60,11 @@ class ProductSyncService {
   Future<void> pullFromRemote() async {
     final all = await remote.fetchAllOnce();
     for (final p in all) {
-      final current = p.remoteId == null ? null : await local.getByRemoteId(p.remoteId!);
-      if (current == null || p.updatedAt.isAfter(current.updatedAt)) {
+      final current = p.remoteId == null
+          ? null
+          : await local.getByRemoteId(p.remoteId!);
+      if (current == null ||
+          p.dataAtualizacao.isAfter(current.dataAtualizacao)) {
         if (p.deleted) {
           if (current?.id != null) await local.hardDelete(current!.id!);
         } else {
@@ -78,14 +87,13 @@ class ProductSyncService {
         continue;
       }
 
-      
       final newRemoteData = await remote.upsert(p);
       if (p.id != null) {
-         await local.markSynced(
-           p.id!, 
-           newRemoteData.remoteId, 
-           newRemoteData.updatedAt
-         );
+        await local.markSynced(
+          p.id!,
+          newRemoteData.remoteId,
+          newRemoteData.dataAtualizacao,
+        );
       }
     }
   }

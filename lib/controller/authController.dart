@@ -116,7 +116,7 @@ class AuthController extends GetxController {
     current = local;
 
     // 5) Redireciona pela permissão (se quiser telas distintas por perfil, ajuste aqui)
-    Get.offAll(() => const Homescreen());
+    Get.offAll(() => const HomeScreen());
   }
 
   Future<void> _run(

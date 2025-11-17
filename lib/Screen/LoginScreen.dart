@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:get/get_connect/http/src/utils/utils.dart';
 import 'package:stock_massas/controller/authController.dart';
 
+// Tela de login/cadastro com duas modalidades.
 class Loginscreen extends StatefulWidget {
   const Loginscreen({super.key});
 
@@ -50,6 +51,7 @@ class _LoginscreenState extends State<Loginscreen> {
   }
 
   Future<void> _submit() async {
+    // Valida formulário e dispara login ou cadastro.
     final form = _formKey.currentState;
     if (form == null || !form.validate()) return;
     FocusScope.of(context).unfocus();
@@ -65,6 +67,7 @@ class _LoginscreenState extends State<Loginscreen> {
   Widget build(BuildContext context) {
     final w = MediaQuery.of(context).size.width;
 
+    // Layout centralizado com cartão responsivo.
     return Scaffold(
       backgroundColor: Colors.green[100],
       body: SafeArea(
@@ -116,6 +119,7 @@ class _LoginscreenState extends State<Loginscreen> {
                           const SizedBox(height: 32),
 
                           if (_auth.errorMessage.value != null) ...[
+                            // Mensagem de erro amigável quando o backend retorna falhas.
                             Container(
                               padding: const EdgeInsets.all(14),
                               decoration: BoxDecoration(
@@ -149,6 +153,7 @@ class _LoginscreenState extends State<Loginscreen> {
                             const SizedBox(height: 20),
                           ],
                           if (isSignUp) ...[
+                            // Campo de nome só aparece no modo cadastro.
                             TextFormField(
                               controller: _nameCtrl,
                               decoration: InputDecoration(
@@ -190,6 +195,7 @@ class _LoginscreenState extends State<Loginscreen> {
 
                           TextFormField(
                             controller: _emailCtrl,
+                            // Campo de e-mail com validação básica.
                             decoration: InputDecoration(
                               labelText: 'Email',
                               hintText: 'seuemail@email.com',
@@ -230,6 +236,7 @@ class _LoginscreenState extends State<Loginscreen> {
                           TextFormField(
                             controller: _passCtrl,
                             obscureText: _obscure,
+                            // Campo de senha com botão de mostrar/ocultar.
                             decoration: InputDecoration(
                               labelText: 'senha',
                               hintText: 'Mínimo 6 caracteres',
@@ -284,6 +291,7 @@ class _LoginscreenState extends State<Loginscreen> {
                             width: double.infinity,
                             height: 55,
                             child: ElevatedButton(
+                              // Botão principal: desabilita enquanto carrega.
                               onPressed: _auth.isLoading.value ? null : _submit,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor:
@@ -314,6 +322,7 @@ class _LoginscreenState extends State<Loginscreen> {
                           const SizedBox(height: 20),
 
                           TextButton(
+                            // Alterna entre login e cadastro.
                             onPressed: _auth.isLoading.value
                                 ? null
                                 : () => setState(() => isSignUp = !isSignUp),
@@ -364,6 +373,7 @@ class _LoginscreenState extends State<Loginscreen> {
                           SizedBox(
                             width: double.infinity,
                             height: 55,
+                            // Botão de login social com Google.
                             child: OutlinedButton.icon(
                               onPressed: _auth.isLoading.value
                                   ? null

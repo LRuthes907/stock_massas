@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:stock_massas/models/produtoModel.dart';
 import 'package:stock_massas/repository/produtoRepository.dart';
 
+// Controla o fluxo de produtos entre a camada de dados e a UI.
 class ProdutoController extends GetxController {
   final _repo = ProdutoRepository();
 
@@ -12,11 +13,13 @@ class ProdutoController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    // Carrega a lista assim que o controller é criado.
     loadProduto();
   }
 
   Future<void> loadProduto() async {
     try {
+      // Marca a tela como carregando e limpa erros antigos.
       isLoading.value = true;
       error.value = null;
 
@@ -34,6 +37,7 @@ class ProdutoController extends GetxController {
     required String precoStr,
     required String quantidadeStr,
   }) {
+    // Validação simples usada pelo formulário para evitar dados inválidos.
     if (nome.trim().isEmpty) return 'Nome é obrigatório.';
 
     final price = double.tryParse(precoStr.replaceAll(',', '.'));
@@ -52,6 +56,7 @@ class ProdutoController extends GetxController {
     DateTime? dataValidade,
   }) async {
     try {
+      // Salva o novo produto no banco local.
       isLoading.value = true;
       final p = Produto(
         nome: nome,
@@ -73,6 +78,7 @@ class ProdutoController extends GetxController {
 
   Future<bool> updateProduto(Produto produtoAtualizada) async {
     try {
+      // Atualiza um registro existente.
       isLoading.value = true;
       await _repo.update(produtoAtualizada);
       await loadProduto();
@@ -87,6 +93,7 @@ class ProdutoController extends GetxController {
 
   Future<void> removeProduto(int id) async {
     try {
+      // Marca o produto como removido.
       isLoading.value = true;
       await _repo.delete(id);
       await loadProduto();

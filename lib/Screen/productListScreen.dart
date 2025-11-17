@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+// Tela que lista tudo o que foi cadastrado no Firestore.
 class ProductListScreen extends StatelessWidget {
   const ProductListScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     final primary = Colors.green.shade700;
+    // Tela raiz que prepara o layout e o tema da lista.
     return Scaffold(
       backgroundColor: Colors.green[100],
       appBar: AppBar(
@@ -37,6 +39,7 @@ class _ProductListCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Cartão central com título, descrição e a lista em si.
     return Card(
       elevation: 10,
       shadowColor: Colors.green.shade200,
@@ -86,6 +89,7 @@ class _ProductListCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 24),
+            // Acompanha os produtos do Firestore em tempo real.
             StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
               stream: FirebaseFirestore.instance
                   .collection('produtos')
@@ -115,19 +119,22 @@ class _ProductListCard extends StatelessWidget {
                   return const _EmptyState();
                 }
 
+                // Exibe cada produto em um card separado.
                 return ListView.separated(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: docs.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
-                    final data = docs[index].data();
+                    final snapshot = docs[index];
+                    final data = snapshot.data();
                     return _ProductTile(
                       name: data['nome']?.toString() ?? 'Sem nome',
                       price: _asDouble(data['preco']),
                       quantity: _asInt(data['quantidade']),
                       description: data['descricao']?.toString(),
                       createdAt: data['createdAt'],
+                      onDelete: () => _confirmDelete(context, snapshot.id),
                     );
                   },
                 );
@@ -140,15 +147,64 @@ class _ProductListCard extends StatelessWidget {
   }
 
   static double _asDouble(dynamic value) {
+    // Garante que valores vindos do Firestore sejam tratados como double.
     if (value is num) return value.toDouble();
     if (value is String) return double.tryParse(value) ?? 0;
     return 0;
   }
 
   static int _asInt(dynamic value) {
+    // Converte quantidade para inteiro, mesmo que venha como string.
     if (value is num) return value.toInt();
     if (value is String) return int.tryParse(value) ?? 0;
     return 0;
+  }
+
+  static Future<void> _confirmDelete(BuildContext context, String docId) async {
+    final shouldDelete =
+        await showDialog<bool>(
+          context: context,
+          // Pergunta ao usuário antes de excluir o produto.
+          builder: (dialogContext) => AlertDialog(
+            title: const Text('Excluir produto'),
+            content: const Text(
+              'Tem certeza de que deseja remover este produto? Esta ação não poderá ser desfeita.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: const Text('Cancelar'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.redAccent,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Excluir'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+
+    if (!shouldDelete) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      // Remove o documento no Firestore e avisa o usuário.
+      await FirebaseFirestore.instance
+          .collection('produtos')
+          .doc(docId)
+          .delete();
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Produto excluído com sucesso.')),
+      );
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('Erro ao excluir produto: $e')),
+      );
+    }
   }
 }
 
@@ -159,6 +215,7 @@ class _ProductTile extends StatelessWidget {
     required this.quantity,
     this.description,
     this.createdAt,
+    required this.onDelete,
   });
 
   final String name;
@@ -166,7 +223,9 @@ class _ProductTile extends StatelessWidget {
   final int quantity;
   final String? description;
   final dynamic createdAt;
+  final VoidCallback onDelete;
 
+  // Formata valores numéricos para o padrão monetário brasileiro.
   String _formatCurrency(double value) => 'R\$ ${value.toStringAsFixed(2)}';
 
   String? _formatDate(dynamic value) {
@@ -183,6 +242,7 @@ class _ProductTile extends StatelessWidget {
     } catch (_) {}
 
     if (date == null) return null;
+    // Monta uma string dd/MM/yyyy HH:mm para ficar amigável na interface.
     return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
   }
 
@@ -190,6 +250,7 @@ class _ProductTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final subtitle = <String>[];
+    // Mostra preço e quantidade resumidos na primeira linha.
     subtitle.add('${_formatCurrency(price)} · ${quantity}x');
     final dateStr = _formatDate(createdAt);
     if (dateStr != null) subtitle.add('Criado em $dateStr');
@@ -222,7 +283,15 @@ class _ProductTile extends StatelessWidget {
                     ),
                   ),
                 ),
-                const Icon(Icons.chevron_right, color: Colors.grey),
+                IconButton(
+                  tooltip: 'Excluir produto',
+                  icon: const Icon(
+                    Icons.delete_outline,
+                    color: Colors.redAccent,
+                  ),
+                  // Aciona a exclusão quando o usuário clicar na lixeira.
+                  onPressed: onDelete,
+                ),
               ],
             ),
             const SizedBox(height: 12),
@@ -249,6 +318,7 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Mensagem exibida quando não há nenhum produto cadastrado.
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 48),
       child: Column(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+// Tela para cadastrar um novo produto no Firestore.
 class ProductFormScreen extends StatefulWidget {
   const ProductFormScreen({super.key});
 
@@ -54,6 +55,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   int _parseStock(String value) => int.parse(value.trim());
 
   Future<void> _submit() async {
+    // Valida os campos e envia os dados para o Firebase.
     final form = _formKey.currentState;
     if (form == null || !form.validate()) return;
 
@@ -78,6 +80,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     if (user != null) data['usuarioId'] = user.uid;
 
     try {
+      // Salva o produto na coleção "produtos".
       await FirebaseFirestore.instance.collection('produtos').add(data);
 
       if (!mounted) return;
@@ -130,6 +133,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
+                        // Cabeçalho do formulário.
                         Text(
                           'Informações do produto',
                           style: theme.textTheme.titleLarge?.copyWith(
@@ -139,6 +143,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                         const SizedBox(height: 16),
                         TextFormField(
                           controller: _nameCtrl,
+                          // Nome é obrigatório e usado como título nas listas.
                           decoration: const InputDecoration(
                             labelText: 'Nome do produto',
                             prefixIcon: Icon(Icons.inventory_2_outlined),
@@ -149,6 +154,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                         const SizedBox(height: 16),
                         TextFormField(
                           controller: _priceCtrl,
+                          // Preço em reais, aceitando vírgula ou ponto.
                           decoration: const InputDecoration(
                             labelText: 'Preço',
                             prefixIcon: Icon(Icons.attach_money_outlined),
@@ -162,6 +168,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                         const SizedBox(height: 16),
                         TextFormField(
                           controller: _stockCtrl,
+                          // Quantidade inicial que será guardada no estoque.
                           decoration: const InputDecoration(
                             labelText: 'Quantidade em estoque',
                             prefixIcon: Icon(Icons.numbers),
@@ -173,6 +180,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                         const SizedBox(height: 16),
                         TextFormField(
                           controller: _descriptionCtrl,
+                          // Campo opcional para notas adicionais.
                           maxLines: 4,
                           decoration: const InputDecoration(
                             labelText: 'Descrição',
@@ -183,6 +191,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                         SizedBox(
                           height: 52,
                           child: ElevatedButton.icon(
+                            // Botão de salvar, bloqueia enquanto está enviando.
                             onPressed: _isSubmitting ? null : _submit,
                             icon: const Icon(Icons.save_outlined),
                             style: ElevatedButton.styleFrom(

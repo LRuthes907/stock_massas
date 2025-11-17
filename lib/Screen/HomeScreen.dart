@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:stock_massas/Screen/productFormScreen.dart';
 import 'package:stock_massas/Screen/productListScreen.dart';
 
+// Tela inicial que apresenta os atalhos do sistema.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -14,12 +15,14 @@ class _HomeScreenState extends State<HomeScreen> {
   Color? get _backgroundColor => Colors.green[100];
 
   void _goToProductForm(BuildContext context) {
+    // Abre a tela de cadastro de produto.
     Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (_) => const ProductFormScreen()));
   }
 
   void _goToProductList(BuildContext context) {
+    // Abre a tela de listagem de produtos.
     Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (_) => const ProductListScreen()));
@@ -39,12 +42,14 @@ class _HomeScreenState extends State<HomeScreen> {
       body: LayoutBuilder(
         builder: (context, constraints) {
           final isWide = constraints.maxWidth >= 900;
+          // Card principal com as ações mais usadas.
           final homeCard = _HomeHighlightCard(
             onCreateProduct: () => _goToProductForm(context),
             onViewProducts: () => _goToProductList(context),
           );
 
           if (isWide) {
+            // Layout lado a lado para desktop/tablet.
             return SafeArea(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(
@@ -76,6 +81,7 @@ class _HomeScreenState extends State<HomeScreen> {
           }
 
           return SafeArea(
+            // Layout empilhado para telas menores.
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),
               child: Center(
@@ -110,6 +116,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: const [
+                    // Cabeçalho do menu lateral.
                     Text(
                       'Stock Massas',
                       style: TextStyle(
@@ -155,6 +162,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   vertical: 24,
                 ),
                 child: Text(
+                  // Rodapé com a versão atual.
                   'Versão 1.0.0',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.grey.shade600),
@@ -193,6 +201,7 @@ class _HomeHighlightCard extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            // Avatar com o ícone principal do app.
             CircleAvatar(
               radius: 38,
               backgroundColor: Colors.green.shade100,
@@ -223,6 +232,7 @@ class _HomeHighlightCard extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
+                // Atalho rápido para criar um produto.
                 onPressed: onCreateProduct,
                 icon: const Icon(Icons.add_circle_outline),
                 style: ElevatedButton.styleFrom(
@@ -244,6 +254,7 @@ class _HomeHighlightCard extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
+                // Direciona para a lista completa.
                 onPressed: onViewProducts,
                 icon: const Icon(Icons.list_alt_outlined),
                 style: OutlinedButton.styleFrom(
@@ -313,11 +324,13 @@ class _NavigationCard extends StatelessWidget {
             _NavigationTile(
               icon: Icons.add_box_outlined,
               label: 'Cadastro de produtos',
+              // Usa o callback passado pela tela principal.
               onTap: onProductTap,
             ),
             _NavigationTile(
               icon: Icons.inventory_2_outlined,
               label: 'Produtos cadastrados',
+              // Mesmo padrão para a navegação da lista.
               onTap: onListTap,
             ),
             const Divider(height: 32),
